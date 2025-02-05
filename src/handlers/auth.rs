@@ -13,6 +13,13 @@ pub struct SignUpPayload {
     password: String,
 }
 
+pub struct SignUpResponse {
+    id: u32,
+    name: String,
+    email: String,
+    registered_at: String,
+}
+
 pub async fn signup(
     pool: web::Data<PgPool>,
     payload: web::Json<SignUpPayload>,
@@ -44,5 +51,12 @@ pub async fn signup(
             actix_web::error::ErrorInternalServerError("Failed to create user")
         })?;
 
-    Ok(HttpResponse::Ok().json(user))
+    let res: SignUpResponse = {
+        id: user.id,
+        name: user.name.clone(),
+        email: user.email.clone(),
+        registered_at: user.registered_at.clone(),
+    }
+
+    Ok(HttpResponse::Ok().json(res))
 }
