@@ -27,7 +27,8 @@
 ✅ `.env` support for environment variables
 
 ```sh
-git clone https://github.com/YOUR_USERNAME/govpeep-api.gitcd govpeep-apitouch .env
+git clone https://github.com/YOUR_USERNAME/govpeep-api.gitcd govpeep-api
+touch .env
 ```  
 
 @alex fill out the db info on ur own im not putting that here, too riskayyyy
