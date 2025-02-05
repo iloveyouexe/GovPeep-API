@@ -1,0 +1,7 @@
+/target
+
+# Ignore environment variable holee frick
+.env
+
+.idea
+.iml
