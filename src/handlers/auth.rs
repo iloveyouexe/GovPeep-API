@@ -3,6 +3,7 @@ use argon2::{Argon2, PasswordHasher, password_hash::SaltString};
 use sqlx::PgPool;
 use uuid::Uuid;
 use rand_core::OsRng;
+use serde::Serialize;
 
 use crate::models::user::User;
 
@@ -13,8 +14,9 @@ pub struct SignUpPayload {
     password: String,
 }
 
+#[derive(Serialize)]
 pub struct SignUpResponse {
-    id: u32,
+    id: Uuid,
     name: String,
     email: String,
     registered_at: String,
@@ -32,7 +34,7 @@ pub async fn signup(
             log::error!("❌ Password hashing failed: {:?}", e);
             actix_web::error::ErrorInternalServerError("Password hashing failed")
         })?
-        .to_string(); // do not delete pls
+        .to_string();
 
     let user = sqlx::query_as!(
         User,
@@ -51,12 +53,12 @@ pub async fn signup(
             actix_web::error::ErrorInternalServerError("Failed to create user")
         })?;
 
-    let res: SignUpResponse = {
+    let res = SignUpResponse {
         id: user.id,
         name: user.name.clone(),
         email: user.email.clone(),
-        registered_at: user.registered_at.clone(),
-    }
+        registered_at: user.registered_at.to_string(),
+    };
 
     Ok(HttpResponse::Ok().json(res))
 }
