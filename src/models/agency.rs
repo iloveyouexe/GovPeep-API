@@ -8,7 +8,7 @@ pub struct Agency {
     pub name: String,
     pub description: String,
     pub website: String,
-    pub phone_number: String,
+    pub phone_number: Option<String>,
     pub logo: String,
     pub governance: String,
     pub created_at: NaiveDateTime,

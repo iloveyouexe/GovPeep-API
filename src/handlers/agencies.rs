@@ -17,10 +17,13 @@ pub struct AgencyPayload {
 
 // Fetch all
 pub async fn get_agencies(pool: web::Data<PgPool>) -> Result<HttpResponse, actix_web::Error> {
-    let agencies = query_as!(Agency, "SELECT * FROM agencies")
+    let agencies = query_as!(
+    Agency,
+    "SELECT id, name, description, website, phone_number, logo, governance, created_at, updated_at FROM agencies"
+)
         .fetch_all(&**pool)
         .await
-        .map_err(actix_web::error::ErrorInternalServerError)?; // Explicit conversion
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(agencies))
 }
@@ -39,7 +42,7 @@ pub async fn get_agency(
     )
         .fetch_optional(&**pool)
         .await
-        .map_err(actix_web::error::ErrorInternalServerError)?; // Explicit conversion
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match agency {
         Some(agency) => Ok(HttpResponse::Ok().json(agency)),
@@ -52,24 +55,23 @@ pub async fn create_agency(
     pool: web::Data<PgPool>,
     payload: web::Json<AgencyPayload>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let agency = query_as!(
-        Agency,
-        r#"
-        INSERT INTO agencies (id, name, description, website, phone_number, logo, governance, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-        RETURNING *
-        "#,
-        Uuid::new_v4(),
-        payload.name,
-        payload.description,
-        payload.website,
-        payload.phone_number,
-        payload.logo,
-        payload.governance
-    )
+    let agency = sqlx::query_as!(
+    Agency,
+    "INSERT INTO agencies (id, name, description, website, phone_number, logo, governance, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+    RETURNING id, name, description, website, phone_number, logo, governance, created_at, updated_at",
+    Uuid::new_v4(),
+    payload.name,
+    payload.description,
+    payload.website,
+    payload.phone_number,
+    payload.logo,
+    payload.governance
+)
+
         .fetch_one(&**pool)
         .await
-        .map_err(actix_web::error::ErrorInternalServerError)?; // Explicit conversion
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Created().json(agency))
 }
@@ -98,7 +100,7 @@ pub async fn update_agency(
     )
         .fetch_optional(&**pool)
         .await
-        .map_err(actix_web::error::ErrorInternalServerError)?; // Explicit conversion
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match agency {
         Some(agency) => Ok(HttpResponse::Ok().json(agency)),
@@ -119,7 +121,7 @@ pub async fn delete_agency(
     )
         .execute(&**pool)
         .await
-        .map_err(actix_web::error::ErrorInternalServerError)?; // Explicit conversion
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     if result.rows_affected() > 0 {
         Ok(HttpResponse::NoContent().finish())
