@@ -1,5 +1,5 @@
 use actix_web::{web, App, HttpServer, http};
-use actix_cors::Cors; // ✅ Import CORS
+use actix_cors::Cors;
 use dotenv::dotenv;
 use sqlx::PgPool;
 use std::env;
@@ -20,14 +20,15 @@ async fn main() -> std::io::Result<()> {
             .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
             .allowed_headers(vec![http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
             .allow_any_header()
-            .allow_any_origin() // ✅ Allow all origins (you may restrict this in production)
+            .allow_any_origin()
             .supports_credentials()
-            .max_age(3600); // ✅ Cache CORS options for 1 hour
+            .max_age(3600);
 
         App::new()
-            .wrap(cors) // ✅ Apply CORS middleware
+            .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .route("/api/agencies", web::get().to(handlers::agencies::get_agencies))
+            .route("/api/generate_foia", web::post().to(handlers::foia::generate_foia))
     })
         .bind("127.0.0.1:8080")?
         .run()
