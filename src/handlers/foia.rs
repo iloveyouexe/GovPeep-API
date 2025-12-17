@@ -32,7 +32,7 @@ pub async fn generate_foia(
 
 /// reqwest helper function
 async fn call_openai_api(prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let api_key = env::var("OPENAI_API_KEY")?;
+    let api_key = env::var("CLAUDEAI_API_KEY")?;
     let client = Client::new();
 
     let body = json!({

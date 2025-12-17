@@ -36,22 +36,19 @@ pub async fn signup(
         })?
         .to_string();
 
-    let user = sqlx::query_as!(
-        User,
-        "INSERT INTO users (id, name, email, password_hash, registered_at)
-        VALUES ($1, $2, $3, $4, NOW())
-        RETURNING *",
-        Uuid::new_v4(),
-        payload.name,
-        payload.email,
-        hashed_password
+    let user = sqlx::query_as::<_, User>(
+        "INSERT INTO users (id, name, email, password_hash, registered_at)\nVALUES ($1, $2, $3, $4, NOW())\nRETURNING *",
     )
-        .fetch_one(&**pool)
-        .await
-        .map_err(|e| {
-            log::error!("❌ Database insert failed: {:?}", e);
-            actix_web::error::ErrorInternalServerError("Failed to create user")
-        })?;
+    .bind(Uuid::new_v4())
+    .bind(&payload.name)
+    .bind(&payload.email)
+    .bind(&hashed_password)
+    .fetch_one(&**pool)
+    .await
+    .map_err(|e| {
+        log::error!("❌ Database insert failed: {:?}", e);
+        actix_web::error::ErrorInternalServerError("Failed to create user")
+    })?;
 
     let res = SignUpResponse {
         id: user.id,

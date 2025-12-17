@@ -12,7 +12,18 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = PgPool::connect(&database_url).await.unwrap();
+    let pool = match PgPool::connect(&database_url).await {
+        Ok(pool) => pool,
+        Err(e) => {
+            let redacted = redact_database_url(&database_url);
+            eprintln!("Failed to connect to DATABASE_URL: {redacted}");
+            eprintln!("sqlx error: {e}");
+            eprintln!(
+                "Expected format: postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require"
+            );
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+        }
+    };
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -33,4 +44,25 @@ async fn main() -> std::io::Result<()> {
         .bind("127.0.0.1:8080")?
         .run()
         .await
+}
+
+fn redact_database_url(database_url: &str) -> String {
+    if let Some(scheme_end) = database_url.find("://") {
+        let scheme = &database_url[..scheme_end + 3];
+        let rest = &database_url[scheme_end + 3..];
+
+        if let Some(at) = rest.find('@') {
+            let (userinfo, after_at) = rest.split_at(at);
+            let after_at = &after_at[1..];
+
+            if let Some(colon) = userinfo.find(':') {
+                let user = &userinfo[..colon];
+                return format!("{scheme}{user}:***@{after_at}");
+            }
+
+            return format!("{scheme}***@{after_at}");
+        }
+    }
+
+    database_url.to_string()
 }
